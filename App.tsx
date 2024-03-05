@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "regenerator-runtime/runtime";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -9,12 +9,29 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
+  LayoutChangeEvent,
 } from "react-native";
 import "./styles.css";
 import { Picker } from "@react-native-picker/picker";
 import Canvas from "react-native-canvas";
 import { LinearGradient } from "expo-linear-gradient";
 import { Audio } from "expo-av";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  SpaceMono_400Regular,
+  SpaceMono_700Bold,
+} from "@expo-google-fonts/space-mono";
+import {
+  RobotoSlab_700Bold,
+  RobotoSlab_400Regular,
+} from "@expo-google-fonts/roboto-slab";
+import {
+  EncodeSans_400Regular,
+  EncodeSans_700Bold,
+} from "@expo-google-fonts/encode-sans";
+
+SplashScreen.preventAutoHideAsync();
 
 const Pomodoro = () => {
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
@@ -44,12 +61,23 @@ const Pomodoro = () => {
   const seconds = secondsLeft % 60;
   const toggleSettings = () => setShowSettings(!showSettings);
 
+  let [fontsLoaded, fontError] = useFonts({
+    "space mono bold": SpaceMono_700Bold,
+    "roboto slab bold": RobotoSlab_700Bold,
+    "kumbh sans bold": EncodeSans_700Bold,
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
   useEffect(() => {
     const getCustomizations = async () => {
       const savedCustomizations = await AsyncStorage.getItem("customizations");
       if (savedCustomizations) {
         const parsedCustomizations = JSON.parse(savedCustomizations);
-        console.log(parsedCustomizations);
         setTempPomodoroTime(parsedCustomizations.tempPomodoroTime);
         setTempShortBreakTime(parsedCustomizations.tempShortBreakTime);
         setTempLongBreakTime(parsedCustomizations.tempLongBreakTime);
@@ -115,8 +143,8 @@ const Pomodoro = () => {
         setShouldBlink((shouldBlink) => !shouldBlink);
       }, 800);
       return () => clearInterval(interval);
-    }else{
-      setShouldBlink(true)
+    } else {
+      setShouldBlink(true);
     }
   }, [seconds]);
 
@@ -144,6 +172,14 @@ const Pomodoro = () => {
   }, [timer]);
 
   const canvasRef = useRef<Canvas>(null);
+
+  const onContainerLayout = (event: LayoutChangeEvent) => {
+    const { layout } = event.nativeEvent
+    if (canvasRef?.current) {
+      canvasRef.current.height = layout.height
+      canvasRef.current.width = layout.width
+    }
+  }
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -181,7 +217,7 @@ const Pomodoro = () => {
       }, 1000);
 
       return () => clearInterval(timerInterval);
-    }else console.log('error loading canvas')
+    } else console.log("error loading canvas");
   }, [paused, started, secondsLeft, color]);
 
   const handleClick = (time: number, label: string) => {
@@ -206,16 +242,25 @@ const Pomodoro = () => {
     }
   }, [secondsLeft]);
 
+  if (!fontsLoaded) return null;
+
   return (
     <SafeAreaView
       style={{
         flex: 1,
         paddingTop: StatusBar.currentHeight,
+        backgroundColor: '#1E213F'
       }}
+      onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor="#1E213F" barStyle="light-content" />
-      <View className="bg-[#1E213F] h-screen flex gap-12 items-center py-8 px-6">
-        <Text style={{fontFamily: 'Inter_900Black'}} className="text-white text-2xl font-bold">pomodoro</Text>
+      <View className=" h-screen flex gap-12 items-center py-8 px-6">
+        <Text
+          style={{ fontFamily: `${font} bold` }}
+          className="text-white text-2xl font-bold"
+        >
+          pomodoro
+        </Text>
         <View className="h-16 bg-slate-900 rounded-full flex-row justify-center items-center p-2 gap-0">
           <Pressable
             onPress={() => handleClick(tempPomodoroTime, "pomodoro")}
@@ -225,14 +270,7 @@ const Pomodoro = () => {
                 selectedButton === "pomodoro" ? color : "transparent",
             }}
           >
-            <Text
-              style={{
-                color: selectedButton === "pomodoro" ? "#1E213F" : "#D7E0FF",
-                // fontFamily:fontsLoaded
-              }}
-            >
-              pomodoro
-            </Text>
+            <Text style={{color: selectedButton === "pomodoro" ? "#1E213F" : "#D7E0FF", fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0 }}>pomodoro</Text>
           </Pressable>
 
           <Pressable
@@ -245,7 +283,7 @@ const Pomodoro = () => {
           >
             <Text
               style={{
-                color: selectedButton === "short break" ? "#1E213F" : "#D7E0FF",
+                color: selectedButton === "short break" ? "#1E213F" : "#D7E0FF",fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0
               }}
             >
               short break
@@ -262,7 +300,7 @@ const Pomodoro = () => {
           >
             <Text
               style={{
-                color: selectedButton === "long break" ? "#1E213F" : "#D7E0FF",
+                color: selectedButton === "long break" ? "#1E213F" : "#D7E0FF",fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0
               }}
             >
               long break
@@ -283,18 +321,20 @@ const Pomodoro = () => {
           className="w-[300px] h-[300px] rounded-full flex justify-center items-center"
         >
           <View className="w-[268px] h-[268px] bg-slate-900 rounded-full flex justify-center items-center">
-            <View className="w-[248px] h-[248px] flex items-center">
+            <View onLayout={onContainerLayout} className="w-[248px] h-[248px] flex items-center">
               <Canvas
                 style={{
                   position: "absolute",
                 }}
                 ref={canvasRef}
               />
-              <View className="w-full h-full flex justify-center items-center">
+              <View className="w-full h-full mt-2 flex justify-center items-center">
                 <Text
-                  className={`${shouldBlink ? "opacity-100" : "opacity-0"} ${
-                    font === "space mono" ? "-tracking-tighter" : ""
-                  } text-[#D7E0FF] text-7xl font-bold mt-4 tracking-tighter`}
+                  style={{
+                    fontFamily: `${font} bold`,
+                    letterSpacing: font === "space mono" ? -5 : 0
+                  }}
+                  className={`${shouldBlink ? "opacity-100" : "opacity-0"} text-[#D7E0FF] text-7xl font-bold mt-4 tracking-tighter`}
                 >
                   {minutes >= 10 ? `${minutes}` : "0" + minutes}:
                   {seconds >= 10 ? `${seconds}` : "0" + seconds}
@@ -303,13 +343,15 @@ const Pomodoro = () => {
                   {!started && !reset && (
                     <Pressable
                       onPress={() => {
-                        // audioAuth();
                         setStarted(true);
                         setPaused(false);
                         setReset(false);
                       }}
                     >
-                      <Text className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase">
+                      <Text
+                        style={{ fontFamily: `${font} bold` }}
+                        className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase"
+                      >
                         Start
                       </Text>
                     </Pressable>
@@ -317,11 +359,13 @@ const Pomodoro = () => {
                   {started && !paused && secondsLeft !== 0 && (
                     <Pressable
                       onPress={() => {
-                        // audioAuth();
                         setPaused(true);
                       }}
                     >
-                      <Text className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase">
+                      <Text
+                        style={{ fontFamily: `${font} bold` }}
+                        className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase"
+                      >
                         Pause
                       </Text>
                     </Pressable>
@@ -329,11 +373,13 @@ const Pomodoro = () => {
                   {started && paused && secondsLeft !== 0 && (
                     <Pressable
                       onPress={() => {
-                        // audioAuth();
                         setPaused(false);
                       }}
                     >
-                      <Text className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase">
+                      <Text
+                        style={{ fontFamily: `${font} bold` }}
+                        className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase"
+                      >
                         Resume
                       </Text>
                     </Pressable>
@@ -341,7 +387,6 @@ const Pomodoro = () => {
                   {secondsLeft === 0 && (
                     <Pressable
                       onPress={() => {
-                        // audioAuth();
                         setSecondsLeft(
                           (selectedButton === "pomodoro"
                             ? tempPomodoroTime
@@ -353,7 +398,10 @@ const Pomodoro = () => {
                         setStarted(false);
                       }}
                     >
-                      <Text className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase">
+                      <Text
+                        style={{ fontFamily: `${font} bold` }}
+                        className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase"
+                      >
                         Restart
                       </Text>
                     </Pressable>
@@ -361,13 +409,15 @@ const Pomodoro = () => {
                   {reset && !started && (
                     <Pressable
                       onPress={() => {
-                        // audioAuth();
                         setStarted(true);
                         setPaused(false);
                         setReset(false);
                       }}
                     >
-                      <Text className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase">
+                      <Text
+                        style={{ fontFamily: `${font} bold` }}
+                        className="text-[#D7E0FF] text-base font-bold tracking-[13.12px] uppercase"
+                      >
                         Start
                       </Text>
                     </Pressable>
@@ -385,14 +435,19 @@ const Pomodoro = () => {
             source={{
               uri: "https://ranjeet.blr1.cdn.digitaloceanspaces.com/Pomodoro-Assets/icon-settings.svg",
             }}
-            style={{width:20, height: 20}}
+            style={{ width: 20, height: 20 }}
           />
         </Pressable>
 
         {showSettings && (
           <View className="w-[328px] h-[550px] bg-white rounded-3xl z-50 absolute left-1/2 -translate-x-40 top-20 p-6">
             <View className="flex flex-row justify-between items-center border-b-2 border-[#E3E1E1]">
-              <Text style={{fontFamily: 'kumbh sans'}} className="font-bold text-xl mb-7">Settings</Text>
+              <Text
+                style={{fontFamily: `${font} bold`}}
+                className="font-bold text-xl mb-7"
+              >
+                Settings
+              </Text>
               <Pressable onPress={toggleSettings}>
                 <Image
                   source={{
@@ -403,12 +458,18 @@ const Pomodoro = () => {
               </Pressable>
             </View>
             <View className="pt-6">
-              <Text className="text-xs font-bold tracking-[4.23px] text-center">
+              <Text
+                style={{ fontFamily: `${font} bold` }}
+                className="text-xs font-bold tracking-[4.23px] text-center"
+              >
                 Time (Minutes)
               </Text>
               <View className="py-6 gap-y-2 border-b-2 border-[#E3E1E1]">
                 <View className="flex-row items-center h-10">
-                  <Text className="text-xs" style={{ flex: 0.5 }}>
+                  <Text
+                    className="text-xs"
+                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                  >
                     Pomodoro
                   </Text>
                   <View style={{ flex: 0.5 }}>
@@ -429,7 +490,10 @@ const Pomodoro = () => {
                   </View>
                 </View>
                 <View className="flex-row items-center h-10">
-                  <Text className="text-xs" style={{ flex: 0.5 }}>
+                  <Text
+                    className="text-xs"
+                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                  >
                     Short Break
                   </Text>
                   <View style={{ flex: 0.5 }}>
@@ -450,7 +514,10 @@ const Pomodoro = () => {
                   </View>
                 </View>
                 <View className="flex-row items-center h-10 ">
-                  <Text className="text-xs" style={{ flex: 0.5 }}>
+                  <Text
+                    className="text-xs"
+                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                  >
                     Long Break
                   </Text>
                   <View style={{ flex: 0.5 }}>
@@ -472,7 +539,10 @@ const Pomodoro = () => {
                 </View>
               </View>
               <View className="items-center py-4 gap-y-4  border-b-2 border-[#E3E1E1]">
-                <Text className="text-xs font-bold tracking-[4.23px] uppercase">
+                <Text
+                  style={{ fontFamily: `${font} bold` }}
+                  className="text-xs font-bold tracking-[4.23px] uppercase"
+                >
                   Font
                 </Text>
                 <View className="flex-row gap-x-4 justify-center">
@@ -487,7 +557,7 @@ const Pomodoro = () => {
                     <Text
                       className="font-bold text-base"
                       style={{
-                        fontFamily: tempFont,
+                        fontFamily: `${tempFont} bold`,
                         color: tempFont === "kumbh sans" ? "white" : "#1E213F",
                       }}
                     >
@@ -505,7 +575,7 @@ const Pomodoro = () => {
                     <Text
                       className="font-bold text-base"
                       style={{
-                        fontFamily: tempFont,
+                        fontFamily: `${tempFont} bold`,
                         color: tempFont === "roboto slab" ? "white" : "#1E213F",
                       }}
                     >
@@ -523,7 +593,7 @@ const Pomodoro = () => {
                     <Text
                       className="font-bold text-base"
                       style={{
-                        fontFamily: tempFont,
+                        fontFamily: `${tempFont} bold`,
                         color: tempFont === "space mono" ? "white" : "#1E213F",
                       }}
                     >
@@ -533,7 +603,10 @@ const Pomodoro = () => {
                 </View>
               </View>
               <View className="items-center py-4 gap-y-4">
-                <Text className="text-xs font-bold tracking-[4.23px]">
+                <Text
+                  style={{ fontFamily: `${font} bold` }}
+                  className="text-xs font-bold tracking-[4.23px]"
+                >
                   Color
                 </Text>
                 <View className="flex-row gap-x-4 justify-center">
@@ -542,21 +615,27 @@ const Pomodoro = () => {
                     style={{ backgroundColor: "#F87070" }}
                     onPress={() => setTempColor("#F87070")}
                   >
-                    <Text>{tempColor === "#F87070" && "✔"}</Text>
+                    <Text style={{ fontFamily: `${font} bold` }}>
+                      {tempColor === "#F87070" && "✔"}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="h-10 w-10 rounded-full items-center justify-center"
                     style={{ backgroundColor: "#70F3F8" }}
                     onPress={() => setTempColor("#70F3F8")}
                   >
-                    <Text>{tempColor === "#70F3F8" && "✔"}</Text>
+                    <Text style={{ fontFamily: `${font} bold` }}>
+                      {tempColor === "#70F3F8" && "✔"}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="h-10 w-10 rounded-full items-center justify-center"
                     style={{ backgroundColor: "#D881F8" }}
                     onPress={() => setTempColor("#D881F8")}
                   >
-                    <Text>{tempColor === "#D881F8" && "✔"}</Text>
+                    <Text style={{ fontFamily: `${font} bold` }}>
+                      {tempColor === "#D881F8" && "✔"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -572,7 +651,7 @@ const Pomodoro = () => {
                   setColor(tempColor);
                 }}
               >
-                <Text>Apply</Text>
+                <Text style={{ fontFamily: `${font} bold` }}>Apply</Text>
               </TouchableOpacity>
             </View>
           </View>
