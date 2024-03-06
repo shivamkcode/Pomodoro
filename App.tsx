@@ -11,25 +11,17 @@ import {
   StatusBar,
   LayoutChangeEvent,
 } from "react-native";
-import "./styles.css";
 import { Picker } from "@react-native-picker/picker";
 import Canvas from "react-native-canvas";
 import { LinearGradient } from "expo-linear-gradient";
 import { Audio } from "expo-av";
 import * as SplashScreen from "expo-splash-screen";
-import {
-  useFonts,
-  SpaceMono_400Regular,
-  SpaceMono_700Bold,
-} from "@expo-google-fonts/space-mono";
-import {
-  RobotoSlab_700Bold,
-  RobotoSlab_400Regular,
-} from "@expo-google-fonts/roboto-slab";
-import {
-  EncodeSans_400Regular,
-  EncodeSans_700Bold,
-} from "@expo-google-fonts/encode-sans";
+import { useFonts, SpaceMono_700Bold } from "@expo-google-fonts/space-mono";
+import { RobotoSlab_700Bold } from "@expo-google-fonts/roboto-slab";
+import { EncodeSans_700Bold } from "@expo-google-fonts/encode-sans";
+import { SvgUri } from "react-native-svg";
+import CustomPicker from "./components/CustomPicker";
+import ScrollablePicker from "./components/CustomPicker";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -89,13 +81,13 @@ const Pomodoro = () => {
         setSecondsLeft(parsedCustomizations.secondsLeft);
         setStarted(parsedCustomizations.setStarted);
       } else {
-        setTempPomodoroTime(60);
+        setTempPomodoroTime(pomodoroTime);
         setTempShortBreakTime(shortBreakTime);
         setTempLongBreakTime(longBreakTime);
         setFont("kumbh sans");
         setColor("F87070");
-        setTempFont(font);
-        setTempColor(color);
+        setTempFont("kumbh sans");
+        setTempColor("F87070");
         setSelectedButton("pomodoro");
         setSecondsLeft(25 * 60);
         setStarted(false);
@@ -174,12 +166,12 @@ const Pomodoro = () => {
   const canvasRef = useRef<Canvas>(null);
 
   const onContainerLayout = (event: LayoutChangeEvent) => {
-    const { layout } = event.nativeEvent
+    const { layout } = event.nativeEvent;
     if (canvasRef?.current) {
-      canvasRef.current.height = layout.height
-      canvasRef.current.width = layout.width
+      canvasRef.current.height = layout.height;
+      canvasRef.current.width = layout.width;
     }
-  }
+  };
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -249,7 +241,7 @@ const Pomodoro = () => {
       style={{
         flex: 1,
         paddingTop: StatusBar.currentHeight,
-        backgroundColor: '#1E213F'
+        backgroundColor: "#1E213F",
       }}
       onLayout={onLayoutRootView}
     >
@@ -270,7 +262,15 @@ const Pomodoro = () => {
                 selectedButton === "pomodoro" ? color : "transparent",
             }}
           >
-            <Text style={{color: selectedButton === "pomodoro" ? "#1E213F" : "#D7E0FF", fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0 }}>pomodoro</Text>
+            <Text
+              style={{
+                color: selectedButton === "pomodoro" ? "#1E213F" : "#D7E0FF",
+                fontFamily: `${font} bold`,
+                letterSpacing: font === "space mono" ? -1.5 : 0,
+              }}
+            >
+              pomodoro
+            </Text>
           </Pressable>
 
           <Pressable
@@ -283,7 +283,9 @@ const Pomodoro = () => {
           >
             <Text
               style={{
-                color: selectedButton === "short break" ? "#1E213F" : "#D7E0FF",fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0
+                color: selectedButton === "short break" ? "#1E213F" : "#D7E0FF",
+                fontFamily: `${font} bold`,
+                letterSpacing: font === "space mono" ? -1.5 : 0,
               }}
             >
               short break
@@ -300,7 +302,9 @@ const Pomodoro = () => {
           >
             <Text
               style={{
-                color: selectedButton === "long break" ? "#1E213F" : "#D7E0FF",fontFamily: `${font} bold`, letterSpacing: font === "space mono" ? -1.5 : 0
+                color: selectedButton === "long break" ? "#1E213F" : "#D7E0FF",
+                fontFamily: `${font} bold`,
+                letterSpacing: font === "space mono" ? -1.5 : 0,
               }}
             >
               long break
@@ -313,6 +317,7 @@ const Pomodoro = () => {
           end={[1, 1]}
           style={{
             elevation: 10,
+            backgroundColor: "#121530",
             shadowColor: "#121530",
             shadowOffset: { width: 50, height: 50 },
             shadowOpacity: 0.5,
@@ -321,7 +326,10 @@ const Pomodoro = () => {
           className="w-[300px] h-[300px] rounded-full flex justify-center items-center"
         >
           <View className="w-[268px] h-[268px] bg-slate-900 rounded-full flex justify-center items-center">
-            <View onLayout={onContainerLayout} className="w-[248px] h-[248px] flex items-center">
+            <View
+              onLayout={onContainerLayout}
+              className="w-[248px] h-[248px] flex items-center"
+            >
               <Canvas
                 style={{
                   position: "absolute",
@@ -332,9 +340,11 @@ const Pomodoro = () => {
                 <Text
                   style={{
                     fontFamily: `${font} bold`,
-                    letterSpacing: font === "space mono" ? -5 : 0
+                    letterSpacing: font === "space mono" ? -5 : 0,
                   }}
-                  className={`${shouldBlink ? "opacity-100" : "opacity-0"} text-[#D7E0FF] text-7xl font-bold mt-4 tracking-tighter`}
+                  className={`${
+                    shouldBlink ? "opacity-100" : "opacity-0"
+                  } text-[#D7E0FF] text-7xl font-bold mt-4 tracking-tighter`}
                 >
                   {minutes >= 10 ? `${minutes}` : "0" + minutes}:
                   {seconds >= 10 ? `${seconds}` : "0" + seconds}
@@ -427,33 +437,24 @@ const Pomodoro = () => {
             </View>
           </View>
         </LinearGradient>
-        <Pressable
-          className="bg-white [#1E213F] w-5 h-5"
-          onPress={toggleSettings}
-        >
-          <Image
-            source={{
-              uri: "https://ranjeet.blr1.cdn.digitaloceanspaces.com/Pomodoro-Assets/icon-settings.svg",
-            }}
-            style={{ width: 20, height: 20 }}
-          />
+        <Pressable onPress={toggleSettings}>
+          <SvgUri uri="https://ranjeet.blr1.cdn.digitaloceanspaces.com/Pomodoro-Assets/icon-settings.svg" />
         </Pressable>
 
         {showSettings && (
-          <View className="w-[328px] h-[550px] bg-white rounded-3xl z-50 absolute left-1/2 -translate-x-40 top-20 p-6">
+          <View className="w-[328px] h-[550px] bg-white rounded-3xl absolute left-1/2 -translate-x-40 top-20 p-6">
             <View className="flex flex-row justify-between items-center border-b-2 border-[#E3E1E1]">
               <Text
-                style={{fontFamily: `${font} bold`}}
+                style={{ fontFamily: `${font} bold` }}
                 className="font-bold text-xl mb-7"
               >
                 Settings
               </Text>
               <Pressable onPress={toggleSettings}>
-                <Image
-                  source={{
-                    uri: "https://ranjeet.blr1.cdn.digitaloceanspaces.com/Pomodoro-Assets/icon-close.svg",
-                  }}
-                  alt="X"
+                <SvgUri
+                  width={20}
+                  height={20}
+                  uri="https://ranjeet.blr1.cdn.digitaloceanspaces.com/Pomodoro-Assets/icon-close.svg"
                 />
               </Pressable>
             </View>
@@ -465,80 +466,47 @@ const Pomodoro = () => {
                 Time (Minutes)
               </Text>
               <View className="py-6 gap-y-2 border-b-2 border-[#E3E1E1]">
-                <View className="flex-row items-center h-10">
+                <View className="flex-row justify-between items-center h-10">
                   <Text
                     className="text-xs"
-                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                    style={{opacity: 0.40, fontFamily: `${font} bold` }}
                   >
-                    Pomodoro
+                    pomodoro
                   </Text>
-                  <View style={{ flex: 0.5 }}>
-                    <Picker
-                      selectedValue={tempPomodoroTime}
-                      onValueChange={(e) => setTempPomodoroTime(e)}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => i + 1).map(
-                        (value) => (
-                          <Picker.Item
-                            key={value}
-                            label={value.toString()}
-                            value={value.toString()}
-                          />
-                        )
-                      )}
-                    </Picker>
-                  </View>
+                  <ScrollablePicker
+                    initialValue={tempPomodoroTime}
+                    options={Array.from({ length: 60 }, (_, i) => i + 1).filter(number => number % 5 === 0 && number >= 25)}
+                    onValueChange={(value) => setTempPomodoroTime(value)}
+                  />
                 </View>
-                <View className="flex-row items-center h-10">
+                <View className="flex-row justify-between items-center h-10">
                   <Text
                     className="text-xs"
-                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                    style={{opacity: 0.40, fontFamily: `${font} bold` }}
                   >
-                    Short Break
+                    short break
                   </Text>
-                  <View style={{ flex: 0.5 }}>
-                    <Picker
-                      selectedValue={tempShortBreakTime}
-                      onValueChange={(e) => setTempShortBreakTime(e)}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => i + 1).map(
-                        (value) => (
-                          <Picker.Item
-                            key={value}
-                            label={value.toString()}
-                            value={value.toString()}
-                          />
-                        )
-                      )}
-                    </Picker>
-                  </View>
+                  <ScrollablePicker
+                    initialValue={tempShortBreakTime}
+                    options={Array.from({ length: 60 }, (_, i) => i + 1).filter(number => number % 5 === 0 && number < 25)}
+                    onValueChange={(value) => setShortBreakTime(value)}
+                  />
                 </View>
-                <View className="flex-row items-center h-10 ">
+                <View className="flex-row justify-between items-center h-10">
                   <Text
                     className="text-xs"
-                    style={{ flex: 0.5 ,fontFamily: `${font} bold`}}
+                    style={{opacity: 0.40, fontFamily: `${font} bold` }}
                   >
-                    Long Break
+                    long break
                   </Text>
-                  <View style={{ flex: 0.5 }}>
-                    <Picker
-                      selectedValue={tempLongBreakTime}
-                      onValueChange={(e) => setTempLongBreakTime(e)}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => i + 1).map(
-                        (value) => (
-                          <Picker.Item
-                            key={value}
-                            label={value.toString()}
-                            value={value.toString()}
-                          />
-                        )
-                      )}
-                    </Picker>
-                  </View>
+                  <ScrollablePicker
+                    initialValue={tempLongBreakTime}
+                    options={Array.from({ length: 60 }, (_, i) => i + 1).filter(number => number % 5 === 0 && number < 30)}
+                    onValueChange={(value) => setLongBreakTime(value)}
+                  />
                 </View>
               </View>
-              <View className="items-center py-4 gap-y-4  border-b-2 border-[#E3E1E1]">
+              <View className="items-center py-4 gap-y-4 -z-20 border-b-2 border-[#E3E1E1]">
                 <Text
                   style={{ fontFamily: `${font} bold` }}
                   className="text-xs font-bold tracking-[4.23px] uppercase"
@@ -602,7 +570,7 @@ const Pomodoro = () => {
                   </TouchableOpacity>
                 </View>
               </View>
-              <View className="items-center py-4 gap-y-4">
+              <View className="items-center py-4 -z-20 gap-y-4">
                 <Text
                   style={{ fontFamily: `${font} bold` }}
                   className="text-xs font-bold tracking-[4.23px]"
@@ -640,7 +608,7 @@ const Pomodoro = () => {
                 </View>
               </View>
               <TouchableOpacity
-                className="w-36 h-[53px] rounded-3xl items-center justify-center self-center"
+                className="w-36 h-[53px] rounded-3xl -z-20 items-center justify-center self-center"
                 style={{ backgroundColor: color }}
                 onPress={() => {
                   toggleSettings();
